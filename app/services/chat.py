@@ -15,8 +15,7 @@ def create_chat_prompt():
     prompt = ChatPromptTemplate.from_messages([
         ("system", system_message),
         MessagesPlaceholder(variable_name="chat_history"),
-        ("human", "{input}"),
-        MessagesPlaceholder(variable_name="context"),
+        ("human", "Context: {context}\nQuestion: {input}"),
     ])
     return prompt
 
@@ -27,6 +26,10 @@ def create_history_aware_prompt():
         MessagesPlaceholder(variable_name="chat_history"),
         ("human", "{input}"),
     ])
+
+def format_docs(docs):
+    """Format documents into a string."""
+    return "\n\n".join(doc.page_content for doc in docs)
 
 def query_bot(user_query: str, chat_history: ChatMessageHistory = None):
     """
@@ -69,7 +72,8 @@ def query_bot(user_query: str, chat_history: ChatMessageHistory = None):
         # Create the document chain
         document_chain = create_stuff_documents_chain(
             llm=chat_model,
-            prompt=chat_prompt
+            prompt=chat_prompt,
+            document_variable_name="context"
         )
 
         # Create the retrieval chain
