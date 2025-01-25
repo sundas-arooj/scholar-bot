@@ -3,7 +3,7 @@ from typing import Dict
 from uuid import uuid4
 from langchain_community.chat_message_histories import ChatMessageHistory
 from app.services.chat import query_bot
-from app.models.chat import ChatRequest, ChatResponse, MessageResponse
+from app.models.chat import ChatRequest, ChatResponse, MessageResponse, Document
 
 router = APIRouter()
 
@@ -38,7 +38,7 @@ async def query_chatbot(chat_request: ChatRequest):
             session_id=session_id,
             response=response["answer"],
             context=response["context"],
-            source_documents=response["source_documents"]
+            source_documents=[Document(**doc) for doc in response["source_documents"]]
         )
         
     except Exception as e:

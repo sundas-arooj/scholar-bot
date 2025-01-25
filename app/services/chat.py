@@ -96,10 +96,17 @@ def query_bot(user_query: str, chat_history: ChatMessageHistory = None):
             chat_history.add_user_message(user_query)
             chat_history.add_ai_message(answer)
 
+        # Format the context and documents for the response
+        context = [doc.page_content for doc in response.get("context", [])]
+        source_documents = [
+            {"page_content": doc.page_content, "metadata": doc.metadata}
+            for doc in response.get("source_documents", [])
+        ]
+
         return {
             "answer": answer,
-            "context": response.get("context", []),
-            "source_documents": response.get("source_documents", [])
+            "context": context,
+            "source_documents": source_documents
         }
         
     except Exception as e:

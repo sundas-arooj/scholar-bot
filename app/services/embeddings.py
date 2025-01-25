@@ -1,17 +1,16 @@
 import time
 from typing import List
 from langchain_openai import OpenAIEmbeddings
-# from langchain_community.vectorstores import Pinecone
 from langchain_pinecone import PineconeVectorStore
 from app.config import config
 from pinecone import Pinecone, ServerlessSpec
+from app.utils.pdf_processor import process_pdf_document
 
 pc = Pinecone(api_key=config.PINECONE_API_KEY)
 
 
 def get_embeddings_function() -> OpenAIEmbeddings:
     return OpenAIEmbeddings(openai_api_key=config.OPENAI_API_KEY)
-
 
 def create_pinecone_index():
     """
@@ -53,3 +52,33 @@ def store_embeddings(doc_chunks: List[str]):
         text_key="text"
     )
     return vector_store
+
+def initialize_knowledge_base(pdf_path: str):
+    """Initialize the knowledge base from a PDF document."""
+    try:
+        # Process the PDF document
+        chunks = process_pdf_document(pdf_path)
+        if not chunks:
+            raise Exception("No text chunks extracted from PDF")
+
+        # Create embeddings and store in Pinecone
+        embedding_function = get_embeddings_function()
+        PineconeVectorStore.from_texts(
+            texts=chunks,
+            embedding=embedding_function,
+            index_name=config.PINECONE_INDEX_NAME,
+            text_key="text"
+        )
+        
+        return {
+            "status": "success",
+            "message": f"Successfully processed and stored {len(chunks)} chunks of text",
+            "chunk_count": len(chunks)
+        }
+        
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Error initializing knowledge base: {str(e)}",
+            "chunk_count": 0
+        }
