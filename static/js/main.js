@@ -5,13 +5,24 @@ let isProcessing = false;
 document.addEventListener('DOMContentLoaded', () => {
     // Set up event listeners
     document.getElementById('uploadForm').addEventListener('submit', handleFileUpload);
-    document.getElementById('sendButton').addEventListener('click', () => sendMessage(true));
+    document.getElementById('sendButton').addEventListener('click', () => {
+        const isStream = document.getElementById('streamToggle').checked;
+        sendMessage(isStream);
+    });
     document.getElementById('userInput').addEventListener('keypress', (e) => {
-        if (e.key === 'Enter' && !isProcessing) sendMessage(true);
+        if (e.key === 'Enter' && !isProcessing) {
+            const isStream = document.getElementById('streamToggle').checked;
+            sendMessage(isStream);
+        }
     });
 
     // Set up file input change listener
     document.getElementById('fileInput').addEventListener('change', handleFileInputChange);
+    
+    // Set up stream toggle listener
+    document.getElementById('streamToggle').addEventListener('change', (e) => {
+        console.log('Streaming mode:', e.target.checked ? 'enabled' : 'disabled');
+    });
     
     // Initial button states
     updateUploadButtonState();
@@ -108,12 +119,6 @@ async function sendMessage(isStream = true) {
     // Add user message to chat
     addMessage(message, 'user');
     
-    // Create a new message div for the bot response
-    const messagesDiv = document.getElementById('chatMessages');
-    const botMessageDiv = document.createElement('div');
-    botMessageDiv.className = 'message bot-message';
-    messagesDiv.appendChild(botMessageDiv);
-    
     // Change input placeholder and clear value
     userInput.value = '';
     userInput.placeholder = 'Processing...';
@@ -132,6 +137,11 @@ async function sendMessage(isStream = true) {
             })
         });
 
+        // Create bot message div only when we start receiving response
+        const messagesDiv = document.getElementById('chatMessages');
+        const botMessageDiv = document.createElement('div');
+        botMessageDiv.className = 'message bot-message';
+
         if (isStream) {
             // For streaming, get session ID from headers
             const sessionId = response.headers.get('X-Session-ID');
@@ -144,14 +154,23 @@ async function sendMessage(isStream = true) {
             const decoder = new TextDecoder();
             let botResponse = '';
 
+            // Add bot message div to chat when we get first chunk
+            let isFirstChunk = true;
+
             while (true) {
                 const { value, done } = await reader.read();
                 if (done) break;
                 
                 const text = decoder.decode(value);
-                botResponse += text;
-                botMessageDiv.textContent = botResponse;
-                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+                if (text.trim()) {  // Only process non-empty text
+                    if (isFirstChunk) {
+                        messagesDiv.appendChild(botMessageDiv);
+                        isFirstChunk = false;
+                    }
+                    botResponse += text;
+                    botMessageDiv.textContent = botResponse;
+                    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+                }
             }
         } else {
             // Handle non-streaming response
@@ -162,13 +181,24 @@ async function sendMessage(isStream = true) {
                 currentSessionId = data.session_id;
                 console.log('Session ID from response:', data.session_id);
             }
-            botMessageDiv.textContent = data.response;            
-            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+            // Only add bot message div if we have a response
+            if (data.response) {
+                messagesDiv.appendChild(botMessageDiv);
+                botMessageDiv.textContent = data.response;
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            }
         }
 
     } catch (error) {
         console.error('Error:', error);
+        // Show error message in a new bot message
+        const messagesDiv = document.getElementById('chatMessages');
+        const botMessageDiv = document.createElement('div');
+        botMessageDiv.className = 'message bot-message';
         botMessageDiv.textContent = 'Error: Unable to get response from the bot.';
+        messagesDiv.appendChild(botMessageDiv);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
     } finally {
         isProcessing = false;
         userInput.disabled = false;

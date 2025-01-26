@@ -26,24 +26,31 @@ body {
     background-color: var(--bg-darker);
     color: var(--text-primary);
     min-height: 100vh;
+    margin: 0;
+    display: flex;
 }
 
 .container {
     max-width: 1200px;
-    margin: 20px auto;
-    padding: 0 20px;
+    margin: 0 auto;
+    padding: 20px;
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
 }
 
 /* Upload Section */
 .upload-section {
     background-color: var(--bg-dark);
-    padding: 24px;
+    padding: 20px;
     border-radius: 12px;
-    margin: 0 auto 24px;
+    margin: 0 auto 20px;
     box-shadow: var(--shadow);
     border: 1px solid rgba(255, 255, 255, 0.1);
     max-width: 800px;
     text-align: center;
+    flex-shrink: 0;
 }
 
 .upload-form {
@@ -99,17 +106,19 @@ body {
     background-color: var(--bg-dark);
     border-radius: 12px;
     box-shadow: var(--shadow);
-    height: 70vh;
+    flex: 1;
     display: flex;
     flex-direction: column;
     border: 1px solid rgba(255, 255, 255, 0.1);
+    min-height: 0;
 }
 
 .chat-messages {
-    flex-grow: 1;
+    flex: 1;
     overflow-y: auto;
-    padding: 24px;
+    padding: 20px;
     scroll-behavior: smooth;
+    min-height: 0;
 }
 
 /* Scrollbar styling */
@@ -132,7 +141,7 @@ body {
 }
 
 .message {
-    margin-bottom: 20px;
+    margin-bottom: 16px;
     max-width: 80%;
     animation: fadeIn 0.3s ease;
 }
@@ -160,13 +169,92 @@ body {
     box-shadow: var(--shadow);
 }
 
-.chat-input-container {
-    padding: 24px;
+/* Update chat input section styles */
+.chat-input-section {
     border-top: 1px solid rgba(255, 255, 255, 0.1);
-    display: flex;
-    gap: 12px;
     background-color: var(--bg-dark);
     border-radius: 0 0 12px 12px;
+    padding: 12px 20px;
+    flex-shrink: 0;
+}
+
+/* Update stream toggle styles */
+.stream-toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 40px;
+    height: 20px;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--bg-lighter);
+    transition: .4s;
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 14px;
+    width: 14px;
+    left: 3px;
+    bottom: 2px;
+    background-color: var(--text-primary);
+    transition: .4s;
+    border-radius: 50%;
+}
+
+input:checked + .slider {
+    background-color: var(--primary-color);
+}
+
+input:checked + .slider:before {
+    transform: translateX(20px);
+}
+
+.toggle-label {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    user-select: none;
+}
+
+/* Add hover effects */
+.switch:hover .slider {
+    background-color: var(--bg-light);
+}
+
+.switch:hover input:checked + .slider {
+    background-color: var(--primary-hover);
+}
+
+/* Update chat input container styles */
+.chat-input-container {
+    display: flex;
+    gap: 12px;
+    padding: 0;
+    border-top: none;
+    background: none;
+    border-radius: 0;
 }
 
 #userInput {
@@ -202,7 +290,7 @@ body {
 }
 
 #fileInput {
-    padding: 10px;
+    padding: 8px;
     background-color: var(--bg-light);
     border: 2px solid var(--bg-lighter);
     border-radius: 8px;
@@ -282,15 +370,11 @@ body {
 
 /* Add a title to the upload section */
 .upload-section h2 {
-    margin-bottom: 16px;
-    font-size: 1.5rem;
-    font-weight: 500;
-    color: var(--text-primary);
+    margin-bottom: 12px;
+    font-size: 1.4rem;
 }
 
 /* Add description text */
 .upload-description {
-    color: var(--text-secondary);
-    margin-bottom: 16px;
-    font-size: 0.9rem;
+    margin-bottom: 12px;
 } 
