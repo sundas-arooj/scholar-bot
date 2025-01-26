@@ -5,9 +5,9 @@ let isProcessing = false;
 document.addEventListener('DOMContentLoaded', () => {
     // Set up event listeners
     document.getElementById('uploadForm').addEventListener('submit', handleFileUpload);
-    document.getElementById('sendButton').addEventListener('click', sendMessage);
+    document.getElementById('sendButton').addEventListener('click', () => sendMessage(true));
     document.getElementById('userInput').addEventListener('keypress', (e) => {
-        if (e.key === 'Enter' && !isProcessing) sendMessage();
+        if (e.key === 'Enter' && !isProcessing) sendMessage(true);
     });
 
     // Set up file input change listener
@@ -96,7 +96,7 @@ async function handleFileUpload(e) {
 }
 
 // Send a message to the chat
-async function sendMessage() {
+async function sendMessage(isStream = true) {
     const userInput = document.getElementById('userInput');
     const message = userInput.value.trim();
     
@@ -107,6 +107,12 @@ async function sendMessage() {
 
     // Add user message to chat
     addMessage(message, 'user');
+    
+    // Create a new message div for the bot response
+    const messagesDiv = document.getElementById('chatMessages');
+    const botMessageDiv = document.createElement('div');
+    botMessageDiv.className = 'message bot-message';
+    messagesDiv.appendChild(botMessageDiv);
     
     // Change input placeholder and clear value
     userInput.value = '';
@@ -121,17 +127,48 @@ async function sendMessage() {
             },
             body: JSON.stringify({
                 message: message,
-                session_id: currentSessionId
+                session_id: currentSessionId,
+                is_stream: isStream
             })
         });
 
-        const result = await response.json();
-        currentSessionId = result.session_id;
-        
-        // Add bot response to chat
-        addMessage(result.response, 'bot');
+        if (isStream) {
+            // For streaming, get session ID from headers
+            const sessionId = response.headers.get('X-Session-ID');
+            if (sessionId) {
+                currentSessionId = sessionId;
+                console.log('Session ID from headers:', sessionId);
+            }
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let botResponse = '';
+
+            while (true) {
+                const { value, done } = await reader.read();
+                if (done) break;
+                
+                const text = decoder.decode(value);
+                botResponse += text;
+                botMessageDiv.textContent = botResponse;
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            }
+        } else {
+            // Handle non-streaming response
+            const data = await response.json();
+            
+            // For non-streaming, get session ID from response body
+            if (data.session_id) {
+                currentSessionId = data.session_id;
+                console.log('Session ID from response:', data.session_id);
+            }
+            botMessageDiv.textContent = data.response;            
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
     } catch (error) {
-        addMessage('Error: Unable to get response from the bot.', 'bot');
+        console.error('Error:', error);
+        botMessageDiv.textContent = 'Error: Unable to get response from the bot.';
     } finally {
         isProcessing = false;
         userInput.disabled = false;

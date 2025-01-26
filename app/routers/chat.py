@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException
+from fastapi.responses import StreamingResponse
 from typing import Dict
 from uuid import uuid4
 from langchain_community.chat_message_histories import ChatMessageHistory
@@ -27,11 +28,27 @@ async def query_chatbot(chat_request: ChatRequest):
             sessions[session_id] = ChatMessageHistory()
         
         chat_history = sessions[session_id]
-        
+
+        if chat_request.is_stream:
+            response = StreamingResponse(
+                await query_bot(
+                    user_query=chat_request.message,
+                    chat_history=chat_history,
+                    is_stream=True,
+                    session_id=session_id
+                ),
+                media_type='text/event-stream'
+            )
+            
+            response.headers["X-Session-ID"] = session_id
+            
+            return response
+
         # Query the bot with chat history
-        response = query_bot(
+        response = await query_bot(
             user_query=chat_request.message,
-            chat_history=chat_history
+            chat_history=chat_history,
+            session_id=session_id
         )
         
         return ChatResponse(

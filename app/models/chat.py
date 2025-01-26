@@ -10,6 +10,7 @@ class ChatRequest(BaseModel):
     """Model for chat request"""
     session_id: Optional[str] = None
     message: str
+    is_stream: bool = False
 
 class ChatResponse(BaseModel):
     """Model for chat response"""

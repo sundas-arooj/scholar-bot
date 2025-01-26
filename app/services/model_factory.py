@@ -1,4 +1,4 @@
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 from enum import Enum
 from langchain_openai import ChatOpenAI
 # from langchain_google_genai import ChatGoogleGenerativeAI
@@ -25,13 +25,17 @@ class ModelFactory:
     def _create_openai_model(
         self,
         model_name: str = "gpt-4-turbo-preview",
-        temperature: float = 0.4,
+        temperature: float = 0.7,
+        streaming: bool = False,
+        callbacks: Optional[List[Any]] = None,
         **kwargs
     ) -> ChatOpenAI:
         """Create OpenAI chat model"""
         return ChatOpenAI(
             model_name=model_name,
             temperature=temperature,
+            streaming=streaming,
+            callbacks=callbacks,
             openai_api_key=kwargs.get('api_key') or config.OPENAI_API_KEY
         )
     
