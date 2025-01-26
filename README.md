@@ -131,8 +131,5 @@ The application uses:
 - Pinecone for vector storage
 - OpenAI's models for embeddings and chat
 
-## License
-
-This project is licensed under the MIT License.
-
-
+## Contribution
+Contributions are welcome! Please submit a pull request or open an issue to suggest improvements or add new features.
