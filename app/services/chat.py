@@ -1,15 +1,15 @@
 from langchain.chains import create_retrieval_chain, create_history_aware_retriever
-from langchain_openai import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_community.chat_message_histories import ChatMessageHistory
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from app.config import config
 from app.constants.prompts import SYSTEM_PROMPT, HISTORY_PROMPT
 from app.services.embeddings import create_pinecone_index
+from app.services.model_factory import ModelFactory, ModelProvider
+from typing import Optional, Dict, Any
 
 def create_chat_prompt():
     """Create a chat prompt template with system message and chat history."""
-    
     prompt = ChatPromptTemplate.from_messages([
         ("system", SYSTEM_PROMPT),
         MessagesPlaceholder(variable_name="chat_history"),
@@ -29,18 +29,34 @@ def format_docs(docs):
     """Format documents into a string."""
     return "\n\n".join(doc.page_content for doc in docs)
 
-def query_bot(user_query: str, chat_history: ChatMessageHistory = None):
+def query_bot(
+    user_query: str, 
+    chat_history: ChatMessageHistory = None,
+    model_provider: ModelProvider = ModelProvider.OPENAI,
+    model_config: Optional[Dict[str, Any]] = None
+):
     """
     Query the chatbot with user input and optional chat history.
     
     Args:
         user_query (str): The user's question or input
         chat_history (ChatMessageHistory, optional): Previous chat history
+        model_provider (ModelProvider): The model provider to use
+        model_config (Dict[str, Any], optional): Model-specific configuration
         
     Returns:
         dict: Response containing the bot's answer and relevant context
     """
     try:
+        # Initialize model factory
+        model_factory = ModelFactory()
+        
+        # Get chat model from factory
+        chat_model = model_factory.get_chat_model(
+            provider=model_provider,
+            model_config=model_config
+        )
+
         # Initialize the vector store and retriever
         vector_store = create_pinecone_index()
         base_retriever = vector_store.as_retriever(
@@ -48,13 +64,6 @@ def query_bot(user_query: str, chat_history: ChatMessageHistory = None):
             search_kwargs={"k": 5}
         )
         
-        # Initialize the chat model
-        chat_model = ChatOpenAI(
-            model_name="gpt-4o-mini",
-            openai_api_key=config.OPENAI_API_KEY, 
-            temperature=0.7
-        )
-
         # Create prompt templates
         chat_prompt = create_chat_prompt()
         is_chat_history_exists = chat_history and chat_history.messages
