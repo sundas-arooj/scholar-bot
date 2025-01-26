@@ -4,25 +4,23 @@ from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_community.chat_message_histories import ChatMessageHistory
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from app.config import config
+from app.constants.prompts import SYSTEM_PROMPT, HISTORY_PROMPT
 from app.services.embeddings import create_pinecone_index
 
 def create_chat_prompt():
     """Create a chat prompt template with system message and chat history."""
-    system_message = """You are a helpful AI assistant that answers questions based on the provided context. 
-    If you don't know the answer or can't find it in the context, say so - don't make up information.
-    Keep your answers concise and relevant to the query."""
     
     prompt = ChatPromptTemplate.from_messages([
-        ("system", system_message),
+        ("system", SYSTEM_PROMPT),
         MessagesPlaceholder(variable_name="chat_history"),
-        ("human", "Context: {context}\nQuestion: {input}"),
+        ("human", "Context: {context}\nQuery: {input}"),
     ])
     return prompt
 
 def create_history_aware_prompt():
     """Create a prompt template for the history-aware retriever."""
     return ChatPromptTemplate.from_messages([
-        ("system", "Given the conversation history and a question, help identify relevant search terms."),
+        ("system", HISTORY_PROMPT),
         MessagesPlaceholder(variable_name="chat_history"),
         ("human", "{input}"),
     ])
@@ -45,7 +43,7 @@ def query_bot(user_query: str, chat_history: ChatMessageHistory = None):
     try:
         # Initialize the vector store and retriever
         vector_store = create_pinecone_index()
-        retriever = vector_store.as_retriever(
+        base_retriever = vector_store.as_retriever(
             search_type="similarity",
             search_kwargs={"k": 5}
         )
@@ -59,15 +57,18 @@ def query_bot(user_query: str, chat_history: ChatMessageHistory = None):
 
         # Create prompt templates
         chat_prompt = create_chat_prompt()
-        history_prompt = create_history_aware_prompt()
+        is_chat_history_exists = chat_history and chat_history.messages
 
-        # If chat history exists, create a history-aware retriever
-        if chat_history:
+        # Create history-aware retriever if chat history exists
+        if is_chat_history_exists:
+            history_prompt = create_history_aware_prompt()
             retriever = create_history_aware_retriever(
                 llm=chat_model,
-                retriever=retriever,
+                retriever=base_retriever,
                 prompt=history_prompt
             )
+        else:
+            retriever = base_retriever
 
         # Create the document chain
         document_chain = create_stuff_documents_chain(
@@ -85,7 +86,7 @@ def query_bot(user_query: str, chat_history: ChatMessageHistory = None):
         # Run the chain
         response = chain.invoke({
             "input": user_query,
-            "chat_history": chat_history.messages if chat_history else []
+            "chat_history": chat_history.messages if is_chat_history_exists else []
         })
 
         # Extract the answer text from the response
