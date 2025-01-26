@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Knowledge Bot</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- File Upload Section -->
+        <div class="upload-section">
+            <h2>Knowledge Base Upload</h2>
+            <p class="upload-description">Upload a PDF or Word document to create your custom knowledge base</p>
+            <form id="uploadForm" class="upload-form">
+                <input type="file" id="fileInput" accept=".pdf,.doc,.docx" />
+                <button type="submit" class="upload-btn" disabled>Upload Knowledge Base</button>
+            </form>
+            <div id="uploadStatus" class="status-message"></div>
+        </div>
+
+        <!-- Chat Interface -->
+        <div class="chat-container">
+            <div class="chat-messages" id="chatMessages">
+                <!-- Messages will be inserted here -->
+            </div>
+            
+            <div class="chat-input-container">
+                <input type="text" id="userInput" placeholder="Type your message..." />
+                <button id="sendButton" disabled>Send</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/main.js"></script>
+</body>
+</html> 
