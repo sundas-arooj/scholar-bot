@@ -25,7 +25,7 @@ class ModelFactory:
     def _create_openai_model(
         self,
         model_name: str = "gpt-4-turbo-preview",
-        temperature: float = 0.7,
+        temperature: float = 0.4,
         **kwargs
     ) -> ChatOpenAI:
         """Create OpenAI chat model"""

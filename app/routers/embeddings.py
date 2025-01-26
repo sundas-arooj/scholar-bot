@@ -1,17 +1,47 @@
 from fastapi import APIRouter, UploadFile, HTTPException
-from app.utils.pdf_processor import extract_text_from_pdf, split_text_into_chunks
+from app.utils.pdf_processor import process_uploaded_file
 from app.services.embeddings import store_embeddings, initialize_knowledge_base
 import os
 
 router = APIRouter()
 
-@router.post("/upload-pdf")
+@router.post("/upload-file")
 async def upload_pdf(file: UploadFile):
-    content = await file.read()
-    text = extract_text_from_pdf(content)
-    doc_chunks = split_text_into_chunks(text)
-    store_embeddings(doc_chunks)
-    return {"message": "PDF processed and embeddings stored successfully."}
+    """
+    Upload a PDF file and create embeddings.
+    If embeddings already exist, they will be deleted and recreated.
+    """
+    if not file.filename.lower().endswith(('.pdf', '.doc', '.docx')):
+        raise HTTPException(
+            status_code=400,
+            detail="Only PDF and Word documents are supported"
+        )
+    
+    try:
+        content = await file.read()
+        doc_chunks = process_uploaded_file(content, file.filename)
+        
+        if not doc_chunks:
+            raise HTTPException(
+                status_code=400,
+                detail="No text could be extracted from the file"
+            )
+        
+        result = store_embeddings(doc_chunks)
+        
+        if result["status"] == "error":
+            raise HTTPException(
+                status_code=500,
+                detail=result["message"]
+            )
+        
+        return result
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error processing file: {str(e)}"
+        )
 
 @router.post("/initialize-knowledge-base")
 async def init_knowledge_base():
