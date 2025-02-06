@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.routers import chat, embeddings
+from routers import chat, embeddings
 
 router = APIRouter()
 

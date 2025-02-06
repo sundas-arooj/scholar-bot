@@ -1,16 +1,14 @@
 from typing import Optional, Dict, Any, List
 from enum import Enum
 from langchain_openai import ChatOpenAI
-# from langchain_google_genai import ChatGoogleGenerativeAI
-# from langchain_community.llms import LlamaCpp
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.chat_models.base import BaseChatModel
-from app.config import config
+from config import config
 
 class ModelProvider(str, Enum):
     """Supported model providers"""
     OPENAI = "openai"
     GEMINI = "gemini"
-    LLAMA = "llama"
 
 class ModelFactory:
     """Factory class for creating different language models"""
@@ -18,13 +16,12 @@ class ModelFactory:
     def __init__(self):
         self.MODEL_CREATORS = {
             ModelProvider.OPENAI: self._create_openai_model,
-            # ModelProvider.GEMINI: self._create_gemini_model,
-            # ModelProvider.LLAMA: self._create_llama_model
+            ModelProvider.GEMINI: self._create_gemini_model
         }
     
     def _create_openai_model(
         self,
-        model_name: str = "gpt-4-turbo-preview",
+        model_name: str = "gpt-4o-mini",
         temperature: float = 0.7,
         streaming: bool = False,
         callbacks: Optional[List[Any]] = None,
@@ -39,31 +36,18 @@ class ModelFactory:
             openai_api_key=kwargs.get('api_key') or config.OPENAI_API_KEY
         )
     
-    # def _create_gemini_model(
-    #     self,
-    #     model_name: str = "gemini-pro",
-    #     temperature: float = 0.7,
-    #     **kwargs
-    # ) -> ChatGoogleGenerativeAI:
-    #     """Create Google Gemini chat model"""
-    #     return ChatGoogleGenerativeAI(
-    #         model=model_name,
-    #         temperature=temperature,
-    #         google_api_key=kwargs.get('api_key') or config.GEMINI_API_KEY
-    #     )
-    
-    # def _create_llama_model(
-    #     self,
-    #     model_path: str,
-    #     temperature: float = 0.7,
-    #     **kwargs
-    # ) -> LlamaCpp:
-    #     """Create Llama chat model"""
-    #     return LlamaCpp(
-    #         model_path=model_path,
-    #         temperature=temperature,
-    #         **kwargs
-    #     )
+    def _create_gemini_model(
+        self,
+        model_name: str = "gemini-1.5-pro-latest",
+        temperature: float = 0.7,
+        **kwargs
+    ) -> ChatGoogleGenerativeAI:
+        """Create Google Gemini chat model"""
+        return ChatGoogleGenerativeAI(
+            model=model_name,
+            temperature=temperature,
+            google_api_key=kwargs.get('api_key') or config.GEMINI_API_KEY
+        )
 
     def get_chat_model(
         self,
@@ -97,7 +81,7 @@ class ModelFactory:
         return self.get_chat_model(
             provider=ModelProvider.OPENAI,
             model_config={
-                "model_name": "gpt-4-turbo-preview",
+                "model_name": "gpt-4o-2024-08-06",
                 "temperature": 0.7
             }
         ) 

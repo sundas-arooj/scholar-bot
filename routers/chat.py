@@ -3,8 +3,8 @@ from fastapi.responses import StreamingResponse
 from typing import Dict
 from uuid import uuid4
 from langchain_community.chat_message_histories import ChatMessageHistory
-from app.services.chat import query_bot
-from app.models.chat import ChatRequest, ChatResponse, MessageResponse, Document
+from services.chat import query_bot
+from models.chat import ChatRequest, ChatResponse, MessageResponse, Document
 
 router = APIRouter()
 

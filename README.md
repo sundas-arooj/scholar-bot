@@ -12,6 +12,11 @@ ScholarBot is an intelligent document Q&A assistant that allows users to upload 
 - **Modern UI**: Clean, responsive dark-themed interface
 - **Session Management**: Maintains conversation context
 
+### Learn more about it in the following blog post:
+[Building ScholarBot: An Intelligent Document Q&A Assistant with FastAPI and LangChain](https://medium.com/@sundasarooj/building-scholarbot-an-intelligent-document-q-a-assistant-with-fastapi-rag-and-langchain)
+
+![ScholarBot: AI-Powered Document Q&A Assistant](./scholar-bot.png?raw=true "ScholarBot")
+
 ## Prerequisites
 
 - Python 3.9+
@@ -63,7 +68,7 @@ PINECONE_API_KEY=<your-pinecone-api-key>
 
 1. Run the application:
 ```
-uvicorn app.main:app --reload
+uvicorn main:app --reload
 ```
 
 2. Access the application:

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, UploadFile, HTTPException
-from app.utils.pdf_processor import process_uploaded_file
-from app.services.embeddings import store_embeddings, initialize_knowledge_base
+from utils.pdf_processor import process_uploaded_file
+from services.embeddings import store_embeddings, initialize_knowledge_base
 import os
 
 router = APIRouter()
@@ -8,7 +8,7 @@ router = APIRouter()
 @router.post("/upload-file")
 async def upload_pdf(file: UploadFile):
     """
-    Upload a PDF file and create embeddings.
+    Upload a PDF or Word file and create embeddings.
     If embeddings already exist, they will be deleted and recreated.
     """
     if not file.filename.lower().endswith(('.pdf', '.doc', '.docx')):

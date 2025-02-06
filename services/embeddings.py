@@ -2,9 +2,9 @@ import time
 from typing import List
 from langchain_openai import OpenAIEmbeddings
 from langchain_pinecone import PineconeVectorStore
-from app.config import config
+from config import config
 from pinecone import Pinecone, ServerlessSpec
-from app.utils.pdf_processor import process_pdf_document
+from utils.pdf_processor import process_pdf_document
 
 pc = Pinecone(api_key=config.PINECONE_API_KEY)
 

@@ -4,9 +4,9 @@ from langchain_community.chat_message_histories import ChatMessageHistory
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain.callbacks import AsyncIteratorCallbackHandler
-from app.constants.prompts import SYSTEM_PROMPT, HISTORY_PROMPT
-from app.services.embeddings import create_pinecone_index
-from app.services.model_factory import ModelFactory, ModelProvider
+from constants.prompts import SYSTEM_PROMPT, HISTORY_PROMPT
+from services.embeddings import create_pinecone_index
+from services.model_factory import ModelFactory, ModelProvider
 from typing import Optional, Dict, Any, AsyncGenerator, Union
 import asyncio
 
@@ -26,10 +26,6 @@ def create_history_aware_prompt():
         MessagesPlaceholder(variable_name="chat_history"),
         ("human", "{input}"),
     ])
-
-def format_docs(docs):
-    """Format documents into a string."""
-    return "\n\n".join(doc.page_content for doc in docs)
 
 async def query_bot(
     user_query: str, 
@@ -117,7 +113,7 @@ async def query_bot(
                     "stream": is_stream,
                     "callbacks": [callback_handler] if callback_handler else None,
                 },
-                "run_name": "RAGChainWithSources"
+                "run_name": "ScholarBotRAGChain"
             }
         )
 
@@ -134,7 +130,7 @@ async def query_bot(
                                 "stream": is_stream,
                                 "callbacks": [callback_handler] if callback_handler else None,
                             },
-                            "run_name": "RAGChainWithSources"
+                            "run_name": "ScholarBotRAGChain"
                         }
                     )
                     
