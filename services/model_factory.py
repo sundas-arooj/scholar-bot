@@ -84,4 +84,4 @@ class ModelFactory:
                 "model_name": "gpt-4o-2024-08-06",
                 "temperature": 0.7
             }
-        ) 
+        )

@@ -3,12 +3,24 @@ let isProcessing = false;
 
 // Initialize the chat
 document.addEventListener('DOMContentLoaded', () => {
-    // Set up event listeners
     document.getElementById('uploadForm').addEventListener('submit', handleFileUpload);
+    document.getElementById('fileInput').addEventListener('change', () => {
+        const fileInput = document.getElementById('fileInput');
+        const uploadButton = document.querySelector('button[type="submit"]');
+        
+        // Enable upload button if file is selected
+        uploadButton.disabled = !fileInput.files.length;
+        
+        // Update the file name display
+        const fileName = fileInput.files[0]?.name || 'No file chosen';
+        document.getElementById('fileLabel').textContent = fileName;
+    });
+
     document.getElementById('sendButton').addEventListener('click', () => {
         const isStream = document.getElementById('streamToggle').checked;
         sendMessage(isStream);
     });
+    
     document.getElementById('userInput').addEventListener('keypress', (e) => {
         if (e.key === 'Enter' && !isProcessing) {
             const isStream = document.getElementById('streamToggle').checked;
@@ -16,9 +28,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Set up file input change listener
-    document.getElementById('fileInput').addEventListener('change', handleFileInputChange);
-    
     // Set up stream toggle listener
     document.getElementById('streamToggle').addEventListener('change', (e) => {
         console.log('Streaming mode:', e.target.checked ? 'enabled' : 'disabled');
@@ -29,28 +38,22 @@ document.addEventListener('DOMContentLoaded', () => {
     updateSendButtonState();
 });
 
-// Handle file input change
-function handleFileInputChange() {
-    updateUploadButtonState();
-}
-
 // Update upload button state
 function updateUploadButtonState() {
     const fileInput = document.getElementById('fileInput');
-    const uploadButton = document.querySelector('.upload-btn');
+    const uploadButton = document.querySelector('button[type="submit"]');
     
     // Disable both file input and upload button during processing
     fileInput.disabled = isProcessing;
     uploadButton.disabled = !fileInput.files.length || isProcessing;
     
     // Update visual states
-    uploadButton.style.opacity = uploadButton.disabled ? '0.5' : '1';
     if (isProcessing) {
-        fileInput.style.opacity = '0.5';
-        fileInput.style.cursor = 'not-allowed';
+        uploadButton.classList.add('opacity-50', 'cursor-not-allowed');
+        fileInput.classList.add('opacity-50', 'cursor-not-allowed');
     } else {
-        fileInput.style.opacity = '1';
-        fileInput.style.cursor = 'pointer';
+        uploadButton.classList.remove('opacity-50', 'cursor-not-allowed');
+        fileInput.classList.remove('opacity-50', 'cursor-not-allowed');
     }
 }
 
@@ -66,7 +69,6 @@ function updateSendButtonState() {
 async function handleFileUpload(e) {
     e.preventDefault();
     const fileInput = document.getElementById('fileInput');
-    const statusDiv = document.getElementById('uploadStatus');
     
     if (!fileInput.files.length) {
         showStatus('Please select a file first.', 'error');
@@ -75,13 +77,13 @@ async function handleFileUpload(e) {
 
     isProcessing = true;
     updateUploadButtonState();
+    showStatus('Uploading and processing file...');
 
     const file = fileInput.files[0];
     const formData = new FormData();
     formData.append('file', file);
 
     try {
-        statusDiv.textContent = 'Uploading and processing file...';
         const response = await fetch('/embeddings/upload-file', {
             method: 'POST',
             body: formData
@@ -91,9 +93,7 @@ async function handleFileUpload(e) {
         
         if (response.ok) {
             showStatus(`Success! Processed ${result.chunk_count} chunks of text.`, 'success');
-            // Add a system message to chat
             addMessage('Knowledge base updated successfully! You can now ask questions about the uploaded document.', 'bot');
-            // Clear file input
             fileInput.value = '';
         } else {
             showStatus(`Error: ${result.detail}`, 'error');
@@ -116,10 +116,9 @@ async function sendMessage(isStream = true) {
     isProcessing = true;
     updateSendButtonState();
 
-    // Add user message to chat
+    // Add user message
     addMessage(message, 'user');
     
-    // Change input placeholder and clear value
     userInput.value = '';
     userInput.placeholder = 'Processing...';
     userInput.disabled = true;
@@ -137,68 +136,63 @@ async function sendMessage(isStream = true) {
             })
         });
 
-        // Create bot message div only when we start receiving response
+        const sessionId = response.headers.get('X-Session-ID');
+        if (sessionId) {
+            currentSessionId = sessionId;
+            console.log('Session ID:', sessionId);
+        }
+
         const messagesDiv = document.getElementById('chatMessages');
         const botMessageDiv = document.createElement('div');
-        botMessageDiv.className = 'message bot-message';
+        botMessageDiv.className = 'mb-4 animate-fade-in';
+        botMessageDiv.innerHTML = `
+            <div class="flex justify-start">
+                <div class="bg-[#2a2a3f] text-gray-200 max-w-[80%] px-5 py-3 
+                           rounded-[18px] rounded-bl-none shadow-md">
+                    <div class="bot-response"></div>
+                </div>
+            </div>
+        `;
+        
+        const botTextDiv = botMessageDiv.querySelector('.bot-response');
+        let isFirstChunk = true;
 
         if (isStream) {
-            // For streaming, get session ID from headers
-            const sessionId = response.headers.get('X-Session-ID');
-            if (sessionId) {
-                currentSessionId = sessionId;
-                console.log('Session ID from headers:', sessionId);
-            }
-
             const reader = response.body.getReader();
             const decoder = new TextDecoder();
             let botResponse = '';
-
-            // Add bot message div to chat when we get first chunk
-            let isFirstChunk = true;
 
             while (true) {
                 const { value, done } = await reader.read();
                 if (done) break;
                 
                 const text = decoder.decode(value);
-                if (text.trim()) {  // Only process non-empty text
+                if (text.trim()) {
                     if (isFirstChunk) {
                         messagesDiv.appendChild(botMessageDiv);
                         isFirstChunk = false;
                     }
                     botResponse += text;
-                    botMessageDiv.textContent = botResponse;
+                    botTextDiv.textContent = botResponse;
                     messagesDiv.scrollTop = messagesDiv.scrollHeight;
                 }
             }
         } else {
-            // Handle non-streaming response
             const data = await response.json();
-            
-            // For non-streaming, get session ID from response body
             if (data.session_id) {
                 currentSessionId = data.session_id;
                 console.log('Session ID from response:', data.session_id);
             }
-
-            // Only add bot message div if we have a response
-            if (data.response) {
+            
+            if (data.response?.trim()) {
+                botTextDiv.textContent = data.response;
                 messagesDiv.appendChild(botMessageDiv);
-                botMessageDiv.textContent = data.response;
                 messagesDiv.scrollTop = messagesDiv.scrollHeight;
             }
         }
-
     } catch (error) {
         console.error('Error:', error);
-        // Show error message in a new bot message
-        const messagesDiv = document.getElementById('chatMessages');
-        const botMessageDiv = document.createElement('div');
-        botMessageDiv.className = 'message bot-message';
-        botMessageDiv.textContent = 'Error: Unable to get response from the bot.';
-        messagesDiv.appendChild(botMessageDiv);
-        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        addMessage('Error: Unable to get response from the bot.', 'bot');
     } finally {
         isProcessing = false;
         userInput.disabled = false;
@@ -211,21 +205,52 @@ async function sendMessage(isStream = true) {
 function addMessage(text, sender) {
     const messagesDiv = document.getElementById('chatMessages');
     const messageDiv = document.createElement('div');
-    messageDiv.className = `message ${sender}-message`;
-    messageDiv.textContent = text;
+    
+    if (sender === 'user') {
+        messageDiv.innerHTML = `
+            <div class="flex justify-end">
+                <div class="bg-[#7289da] text-white max-w-[80%] px-5 py-3 
+                           rounded-[18px] rounded-br-none shadow-md">
+                    ${text}
+                </div>
+            </div>
+        `;
+    } else {
+        messageDiv.innerHTML = `
+            <div class="flex justify-start">
+                <div class="bg-[#2a2a3f] text-gray-200 max-w-[80%] px-5 py-3 
+                           rounded-[18px] rounded-bl-none shadow-md">
+                    ${text}
+                </div>
+            </div>
+        `;
+    }
+    
+    messageDiv.className = 'mb-4 animate-fade-in';
     messagesDiv.appendChild(messageDiv);
     messagesDiv.scrollTop = messagesDiv.scrollHeight;
 }
 
-// Show status messages
 function showStatus(message, type) {
     const statusDiv = document.getElementById('uploadStatus');
     statusDiv.textContent = message;
-    statusDiv.className = `status-message ${type}`;
+    statusDiv.classList.remove('hidden');
+    
+    if (type === 'success') {
+        statusDiv.className = 'mt-4 p-3 rounded-lg bg-[#1e4620] text-[#4ade80] animate-fade-in';
+    } else if (type === 'error') {
+        statusDiv.className = 'mt-4 p-3 rounded-lg bg-[#441a1d] text-[#f87171] animate-fade-in';
+    } else {
+        statusDiv.className = 'mt-4 p-3 rounded-lg bg-[#1e1e2e] text-gray-300 animate-fade-in';
+    }
 }
 
-// Add input listener for send button state
 document.addEventListener('DOMContentLoaded', () => {
     const userInput = document.getElementById('userInput');
     userInput.addEventListener('input', updateSendButtonState);
+});
+
+document.getElementById('fileInput').addEventListener('change', function() {
+    const label = document.getElementById('fileLabel');
+    label.textContent = this.files[0]?.name || 'Choose File';
 }); 
