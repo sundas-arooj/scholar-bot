@@ -13,7 +13,7 @@ ScholarBot is an intelligent document Q&A assistant that allows users to upload 
 - **Session Management**: Maintains conversation context
 
 ### Learn more about it in the following blog post:
-[Building ScholarBot: An Intelligent Document Q&A Assistant with FastAPI and LangChain](https://medium.com/@sundasarooj/building-scholarbot-an-intelligent-document-q-a-assistant-with-fastapi-rag-and-langchain)
+[Building ScholarBot: An Intelligent Document Q&A Assistant with FastAPI and LangChain](https://medium.com/@sundasarooj/ai-powered-document-q-a-assistant-with-fastapi-langchain-and-rag-78f6461cfbeb)
 
 ![ScholarBot: AI-Powered Document Q&A Assistant](./scholar-bot.png?raw=true "ScholarBot")
 
